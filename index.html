@@ -264,6 +264,9 @@
         </div>
         <div id="screen-bezel">
             <iframe id="game-frame"></iframe>
+            <div id="debug-bar" style="position:absolute;bottom:0;left:0;right:0;z-index:99;
+                background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:11px;
+                padding:4px 8px;pointer-events:none;"></div>
         </div>
         <div id="control-panel">
             <div id="player-label">PLAYER 1</div>
@@ -338,27 +341,54 @@
 
         function onEmulatorReady() {}
         var emuStarted = false;
+        function debugMsg(msg) {
+            var d = document.getElementById("debug-bar");
+            if (d) d.textContent = msg;
+            console.warn("[DEBUG] " + msg);
+        }
         function onEmulatorStarted() {
             if (emuStarted) return;
             emuStarted = true;
             document.getElementById("loading").style.display = "none";
+            var d = document.getElementById("debug-bar");
+            if (d) d.style.display = "none";
         }
 
-        // Fallback: if emulator hasn't reported started after 25s,
-        // hide loading and try to force-start from parent side
+        // Poll iframe state and report via debug bar
+        var diagInterval = setInterval(function() {
+            if (emuStarted) { clearInterval(diagInterval); return; }
+            try {
+                var w = document.getElementById("game-frame").contentWindow;
+                var info = [];
+                if (w.Module) {
+                    info.push("Module:OK");
+                    if (w.Module.calledRun) info.push("calledRun:YES");
+                    else info.push("calledRun:NO");
+                    if (typeof w.Module.callMain === "function") info.push("callMain:OK");
+                    else info.push("callMain:NO");
+                } else { info.push("Module:NO"); }
+                if (typeof w.Browser !== "undefined" && w.Browser.mainLoop) {
+                    info.push("frames:" + w.Browser.mainLoop.currentFrameNumber);
+                }
+                if (typeof w.Emulator_started !== "undefined") info.push("started:" + w.Emulator_started);
+                if (typeof w.Emulator_running !== "undefined") info.push("running:" + w.Emulator_running);
+                if (w.stage) info.push("stage:" + w.stage);
+                if (w.emuAttempted) info.push("attempted:YES");
+                debugMsg(info.join(" | "));
+            } catch(e) { debugMsg("iframe access error: " + e); }
+        }, 2000);
+
+        // Fallback at 30s — hide loading, force-start
         setTimeout(function() {
             if (!emuStarted) {
+                document.getElementById("loading").style.display = "none";
                 try {
                     var w = document.getElementById("game-frame").contentWindow;
                     if (w.Emulator_running !== undefined) w.Emulator_running = true;
-                    // Try to start the emulator if it hasn't been attempted
-                    if (w.startEmulator && !w.emuAttempted) {
-                        w.startEmulator();
-                    }
+                    if (w.startEmulator && !w.emuAttempted) w.startEmulator();
                 } catch(e) {}
-                onEmulatorStarted();
             }
-        }, 25000);
+        }, 30000);
 
         function getSoundStatus() { return true; }
         function enableControls() {}
