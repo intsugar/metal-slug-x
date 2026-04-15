@@ -344,18 +344,21 @@
             document.getElementById("loading").style.display = "none";
         }
 
-        // Fallback: hide loading after 12s even if Emulator_started never fires
-        // Mobile Chrome/Firefox may not fire rAF or may lose iframe focus
+        // Fallback: if emulator hasn't reported started after 25s,
+        // hide loading and try to force-start from parent side
         setTimeout(function() {
             if (!emuStarted) {
-                // Force Emulator_running in the iframe
                 try {
                     var w = document.getElementById("game-frame").contentWindow;
                     if (w.Emulator_running !== undefined) w.Emulator_running = true;
+                    // Try to start the emulator if it hasn't been attempted
+                    if (w.startEmulator && !w.emuAttempted) {
+                        w.startEmulator();
+                    }
                 } catch(e) {}
                 onEmulatorStarted();
             }
-        }, 12000);
+        }, 25000);
 
         function getSoundStatus() { return true; }
         function enableControls() {}
