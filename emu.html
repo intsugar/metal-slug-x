@@ -60,6 +60,38 @@
             setTimeout(resizeCanvas, 500);
             setTimeout(resizeCanvas, 1500);
             setTimeout(resizeCanvas, 3000);
+
+            // FRAME-KICK: On mobile Chrome/Firefox, requestAnimationFrame may not
+            // fire for iframes. After a brief wait, check if frames are flowing.
+            // If not, replace the rAF-based scheduler with setTimeout-based one.
+            setTimeout(function() {
+                try {
+                    var framesBefore = Browser.mainLoop.currentFrameNumber || 0;
+                    // First kick to get things started
+                    if (framesBefore === 0 && Browser.mainLoop.runner) {
+                        setTimeout(Browser.mainLoop.runner, 0);
+                    }
+                    // Check again after 500ms — if still no frames, patch scheduler
+                    setTimeout(function() {
+                        try {
+                            var framesNow = Browser.mainLoop.currentFrameNumber || 0;
+                            if (framesNow < 2) {
+                                reportStatus("rAF not working, switching to setTimeout scheduler");
+                                // Replace the rAF scheduler with setTimeout at ~60fps
+                                Browser.mainLoop.scheduler = function() {
+                                    setTimeout(Browser.mainLoop.runner, 1000 / 60);
+                                };
+                                // Kick the first frame under new scheduler
+                                if (Browser.mainLoop.runner) {
+                                    setTimeout(Browser.mainLoop.runner, 0);
+                                }
+                            } else {
+                                reportStatus("rAF working fine, frames: " + framesNow);
+                            }
+                        } catch(e) { reportStatus("Scheduler patch error: " + e); }
+                    }, 500);
+                } catch(e) { reportStatus("Kick error: " + e); }
+            }, 200);
         }
 
         function resizeCanvas() {
@@ -152,6 +184,22 @@
                     container_height = document.getElementById("container").offsetHeight || window.innerHeight;
                     document.getElementById("canvas").width = container_width;
                     document.getElementById("canvas").height = container_height;
+                    // Frame-kick for retry path — patch scheduler if rAF broken
+                    setTimeout(function() {
+                        try {
+                            if (Browser.mainLoop.runner) setTimeout(Browser.mainLoop.runner, 0);
+                            setTimeout(function() {
+                                try {
+                                    if ((Browser.mainLoop.currentFrameNumber || 0) < 2) {
+                                        Browser.mainLoop.scheduler = function() {
+                                            setTimeout(Browser.mainLoop.runner, 1000 / 60);
+                                        };
+                                        if (Browser.mainLoop.runner) setTimeout(Browser.mainLoop.runner, 0);
+                                    }
+                                } catch(e) {}
+                            }, 500);
+                        } catch(e) {}
+                    }, 200);
                 } catch(e) { reportStatus("Retry error: " + e); }
             }, 3000);
             return true;
