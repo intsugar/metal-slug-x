@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Metal Slug X</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { background: #0a0a0a; width: 100%; height: 100%; overflow: hidden; }
+
+        /* === LOADING === */
+        #loading {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: #0a0a0a; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        #loading .title {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 28px; font-weight: bold; color: #ff4400;
+            text-shadow: 0 0 20px rgba(255,68,0,0.5), 0 0 40px rgba(255,68,0,0.2);
+            margin-bottom: 10px;
+        }
+        #loading .subtitle {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 14px; color: #aaa; margin-bottom: 30px;
+        }
+        #loading .status {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 13px; color: #888;
+        }
+        .spinner {
+            width: 50px; height: 50px; border: 4px solid rgba(255,68,0,0.2);
+            border-top: 4px solid #ff4400; border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* === CABINET LAYOUT === */
+        #cabinet {
+            display: none; width: 100%; height: 100%;
+            flex-direction: column; position: relative;
+        }
+
+        /* Marquee / header strip — Neo Geo MVS style */
+        #marquee {
+            height: 34px; flex-shrink: 0;
+            background: linear-gradient(180deg, #2a1a0a 0%, #1a1008 100%);
+            border-bottom: 2px solid #4a3018;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 11px; font-weight: bold; color: #aa8844;
+            letter-spacing: 3px; text-transform: uppercase;
+        }
+        #marquee .neo-logo {
+            color: #ffaa00; letter-spacing: 2px;
+            text-shadow: 0 0 8px rgba(255,170,0,0.4);
+        }
+        #marquee .sep {
+            color: #ff4400; margin: 0 2px;
+            text-shadow: 0 0 6px rgba(255,68,0,0.4);
+        }
+        #marquee .game-title {
+            color: #ff6633; letter-spacing: 2px;
+            text-shadow: 0 0 8px rgba(255,100,50,0.4);
+        }
+
+        /* Screen bezel area */
+        #screen-bezel {
+            flex: 1; position: relative; overflow: hidden;
+            background: #000;
+            border-left: 6px solid #1a1208;
+            border-right: 6px solid #1a1208;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8), inset 0 0 4px rgba(200,100,50,0.05);
+        }
+        /* CRT scanline overlay — 50% intensity */
+        #screen-bezel::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0,0,0,0.04) 2px,
+                rgba(0,0,0,0.04) 4px
+            );
+            pointer-events: none; z-index: 2;
+        }
+        /* Screen glow — 50% intensity */
+        #screen-bezel::before {
+            content: ''; position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
+            border: 1px solid rgba(200,120,50,0.075);
+            box-shadow: 0 0 15px rgba(200,100,40,0.05);
+            pointer-events: none; z-index: 1;
+        }
+
+        #game-frame {
+            width: 100%; height: 100%; border: none;
+            display: block; position: relative; z-index: 0;
+        }
+
+        /* === CONTROL PANEL — dark military/industrial Neo Geo look === */
+        #control-panel {
+            height: 35%; min-height: 180px; flex-shrink: 0; position: relative;
+            background: linear-gradient(180deg, #1c1810 0%, #141008 40%, #0e0c06 100%);
+            border-top: 3px solid #3a2a18;
+        }
+        /* Panel surface texture */
+        #control-panel::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse at 30% 30%, rgba(120,80,30,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 60%, rgba(100,60,20,0.04) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        /* Metal edge strip */
+        #control-panel::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, #443320, #886640, #443320);
+            opacity: 0.4;
+        }
+
+        /* Player label */
+        #player-label {
+            position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 10px; font-weight: bold; color: #6a5530;
+            letter-spacing: 4px; text-transform: uppercase;
+        }
+
+        /* COIN/START row — centered below player label */
+        #coin-start-row {
+            position: absolute; top: 24px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 10px;
+        }
+        .coin-start-btn {
+            padding: 5px 14px; border-radius: 4px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 10px; font-weight: bold; letter-spacing: 1px;
+            pointer-events: auto; touch-action: none; text-transform: uppercase;
+            cursor: pointer; transition: all 0.1s;
+        }
+        .coin-start-btn:active, .coin-start-btn.active { transform: scale(0.95); }
+        #btn-coin {
+            background: linear-gradient(180deg, #3a3520, #2a2510);
+            border: 1px solid #665520; color: #ddaa22;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,200,50,0.1);
+        }
+        #btn-start {
+            background: linear-gradient(180deg, #3a1a10, #2a1008);
+            border: 1px solid #662818; color: #ff5533;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,80,50,0.1);
+        }
+
+        /* Joystick */
+        #joystick-zone {
+            position: absolute; left: 20px; bottom: 16px;
+            width: 150px; height: 150px;
+            pointer-events: auto; touch-action: none;
+        }
+        #joystick-base {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 120px; height: 120px; border-radius: 50%;
+            background: radial-gradient(circle, #1a1810 0%, #0e0c08 70%, #080604 100%);
+            border: 3px solid #2a2418;
+            box-shadow: inset 0 3px 10px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.5);
+        }
+        #joystick-base::after {
+            content: ''; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90px; height: 90px; border-radius: 50%;
+            border: 1px dashed rgba(255,255,255,0.06);
+        }
+        #joystick-ball {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 54px; height: 54px; border-radius: 50%;
+            background: radial-gradient(circle at 38% 35%, #444, #222, #111);
+            border: 2px solid #3a3020;
+            box-shadow:
+                0 6px 16px rgba(0,0,0,0.7),
+                inset 0 -3px 6px rgba(0,0,0,0.5),
+                inset 0 3px 6px rgba(255,255,255,0.08);
+            transition: transform 0.05s ease-out;
+            cursor: grab;
+        }
+        #joystick-ball:active { cursor: grabbing; }
+
+        /* Action buttons — 4 Neo Geo buttons: A B C D */
+        #buttons-area {
+            position: absolute; right: 12px; bottom: 16px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            pointer-events: auto;
+        }
+        .action-btn {
+            width: 58px; height: 58px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 12px; font-weight: bold; color: #fff;
+            pointer-events: auto; touch-action: none;
+            cursor: pointer; transition: all 0.08s;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .action-btn:active, .action-btn.active {
+            transform: scale(0.92); filter: brightness(1.3);
+        }
+        /* Neo Geo colors: A=red, B=yellow, C=green, D=blue */
+        #btn-a {
+            background: radial-gradient(circle at 40% 35%, #cc2222, #991111, #660a0a);
+            border: 3px solid #dd3333;
+            box-shadow: 0 4px 10px rgba(180,20,20,0.5), inset 0 2px 4px rgba(255,255,255,0.12), inset 0 -2px 4px rgba(0,0,0,0.3);
+        }
+        #btn-b {
+            background: radial-gradient(circle at 40% 35%, #ccaa22, #998811, #66580a);
+            border: 3px solid #ddbb33;
+            box-shadow: 0 4px 10px rgba(180,150,20,0.5), inset 0 2px 4px rgba(255,255,255,0.12), inset 0 -2px 4px rgba(0,0,0,0.3);
+        }
+        #btn-c {
+            background: radial-gradient(circle at 40% 35%, #22aa44, #118833, #0a6622);
+            border: 3px solid #33bb55;
+            box-shadow: 0 4px 10px rgba(20,150,50,0.5), inset 0 2px 4px rgba(255,255,255,0.12), inset 0 -2px 4px rgba(0,0,0,0.3);
+        }
+        #btn-d {
+            background: radial-gradient(circle at 40% 35%, #2244cc, #112299, #0a1166);
+            border: 3px solid #3355dd;
+            box-shadow: 0 4px 10px rgba(20,50,180,0.5), inset 0 2px 4px rgba(255,255,255,0.12), inset 0 -2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Decorative screws */
+        .screw {
+            position: absolute; width: 10px; height: 10px; border-radius: 50%;
+            background: radial-gradient(circle at 40% 35%, #555, #333, #222);
+            border: 1px solid #444;
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.1);
+        }
+        .screw::after {
+            content: '+'; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 8px; color: rgba(255,255,255,0.2); line-height: 1;
+        }
+        #screw-tl { top: 6px; left: 6px; }
+        #screw-tr { top: 6px; right: 6px; }
+        #screw-bl { bottom: 6px; left: 6px; }
+        #screw-br { bottom: 6px; right: 6px; }
+
+        /* Bottom edge */
+        #cab-bottom {
+            height: 6px; flex-shrink: 0;
+            background: linear-gradient(180deg, #0a0804, #050402);
+            border-top: 1px solid #1a1408;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="title">METAL SLUG X</div>
+        <div class="subtitle">Neo Geo MVS</div>
+        <div class="spinner"></div>
+        <div class="status" id="load-status">Loading...</div>
+    </div>
+
+    <div id="cabinet">
+        <div id="marquee">
+            <span class="neo-logo">NEO GEO</span>
+            <span class="sep">///</span>
+            <span class="game-title">METAL SLUG X</span>
+        </div>
+        <div id="screen-bezel">
+            <iframe id="game-frame"></iframe>
+        </div>
+        <div id="control-panel">
+            <div id="player-label">PLAYER 1</div>
+            <div id="coin-start-row">
+                <div class="coin-start-btn" id="btn-coin" data-key="Digit1">COIN</div>
+                <div class="coin-start-btn" id="btn-start" data-key="Enter">START</div>
+            </div>
+            <div id="joystick-zone">
+                <div id="joystick-base">
+                    <div id="joystick-ball"></div>
+                </div>
+            </div>
+            <div id="buttons-area">
+                <div class="action-btn" id="btn-a" data-key="KeyA">A</div>
+                <div class="action-btn" id="btn-b" data-key="KeyS">B</div>
+                <div class="action-btn" id="btn-c" data-key="KeyD">C</div>
+                <div class="action-btn" id="btn-d" data-key="KeyW">D</div>
+            </div>
+            <div class="screw" id="screw-tl"></div>
+            <div class="screw" id="screw-tr"></div>
+            <div class="screw" id="screw-bl"></div>
+            <div class="screw" id="screw-br"></div>
+        </div>
+        <div id="cab-bottom"></div>
+    </div>
+
+    <script>
+        var ROMDATA = null;
+        var BIOSDATA = null;
+        var ROMNAME = "metalslugx.zip";
+        var BIOSNAME = "neogeo.zip";
+        var RETROCFG = "";
+        var statusEl = document.getElementById("load-status");
+
+        function buildConfig() {
+            var w = window.innerWidth, h = window.innerHeight, e = "scroll_lock", c = "";
+            c += "rgui_browser_directory = /\n";
+            c += "input_player1_start = enter\ninput_player1_select = num1\n";
+            // Neo Geo: A=a, B=s, C=d, D=w (mapped to retroarch a,b,r,x)
+            c += "input_player1_a = a\ninput_player1_b = s\ninput_player1_r = d\n";
+            c += "input_player1_x = w\ninput_player1_y = q\ninput_player1_l = e\n";
+            c += "input_audio_mute = f9\ninput_reset = f10\n";
+            ["input_toggle_fast_forward","input_hold_fast_forward","input_toggle_slowmotion","input_hold_slowmotion",
+             "input_save_state","input_load_state","input_toggle_fullscreen","input_exit_emulator",
+             "input_state_slot_increase","input_state_slot_decrease","input_rewind","input_movie_record_toggle",
+             "input_pause_toggle","input_frame_advance","input_shader_next","input_shader_prev",
+             "input_cheat_index_plus","input_cheat_index_minus","input_cheat_toggle","input_screenshot",
+             "input_osk_toggle","input_netplay_game_watch","input_volume_up","input_volume_down",
+             "input_overlay_next","input_disk_eject_toggle","input_disk_next","input_disk_prev",
+             "input_grab_mouse_toggle","input_game_focus_toggle","input_menu_toggle",
+             "input_recording_toggle","input_streaming_toggle"
+            ].forEach(function(k){c+=k+" = "+e+"\n"});
+            ["l2","r2","l3","r3","l_x_plus","l_x_minus","l_y_plus","l_y_minus",
+             "r_x_plus","r_x_minus","r_y_plus","r_y_minus",
+             "gun_trigger","gun_trigger_axis","gun_trigger_btn","gun_trigger_mbtn",
+             "gun_offscreen_shot","gun_aux_a","gun_aux_b","gun_aux_c",
+             "gun_start","gun_select","gun_dpad_up","gun_dpad_down","gun_dpad_left","gun_dpad_right","turbo"
+            ].forEach(function(k){c+="input_player1_"+k+" = "+e+"\n"});
+            var all=["up","down","left","right","start","select","a","b","x","y","l","l2","l3","r","r2","r3",
+                "l_x_plus","l_x_minus","l_y_plus","l_y_minus","r_x_plus","r_x_minus","r_y_plus","r_y_minus",
+                "gun_trigger","gun_trigger_axis","gun_trigger_btn","gun_trigger_mbtn",
+                "gun_offscreen_shot","gun_aux_a","gun_aux_b","gun_aux_c",
+                "gun_start","gun_select","gun_dpad_up","gun_dpad_down","gun_dpad_left","gun_dpad_right","turbo"];
+            for(var p=2;p<=5;p++){all.forEach(function(k){c+="input_player"+p+"_"+k+" = "+e+"\n"})}
+            c+="video_vsync = true\nvideo_scale = 1\n";
+            c+="video_window_x = "+w+"\nvideo_window_y = "+h+"\n";
+            c+="aspect_ratio_index = 23\ncustom_viewport_width = "+w+"\ncustom_viewport_height = "+h+"\n";
+            c+="custom_viewport_x = 0\ncustom_viewport_y = 0\naudio_latency = 128\n";
+            c+="video_message_pos_x = -100\nvideo_message_pos_y = -100\nmenu_enable_widgets = false\n";
+            return c;
+        }
+
+        function onEmulatorReady() {}
+        function onEmulatorStarted() {
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("cabinet").style.display = "flex";
+        }
+
+        function getSoundStatus() { return true; }
+        function enableControls() {}
+        function mobileControlsVisible() { return false; }
+        function goBackButtonResetIncrement() {}
+
+        // Fetch BIOS first, then ROM
+        statusEl.textContent = "Loading BIOS...";
+        var xhrBios = new XMLHttpRequest();
+        xhrBios.open("GET", "roms/" + BIOSNAME, true);
+        xhrBios.responseType = "arraybuffer";
+        xhrBios.onload = function() {
+            if (xhrBios.status === 200) {
+                BIOSDATA = xhrBios.response;
+                statusEl.textContent = "Loading ROM...";
+
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", "roms/" + ROMNAME, true);
+                xhr.responseType = "arraybuffer";
+                xhr.onprogress = function(e) {
+                    if (e.lengthComputable) {
+                        statusEl.textContent = "Loading ROM... " + Math.round((e.loaded / e.total) * 100) + "%";
+                    }
+                };
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        ROMDATA = xhr.response;
+                        RETROCFG = buildConfig();
+                        statusEl.textContent = "Starting emulator...";
+                        var gf = document.getElementById("game-frame");
+                        gf.style.width = (window.innerWidth || 800) + "px";
+                        gf.style.height = (window.innerHeight * 0.6 || 400) + "px";
+                        gf.src = "emu.html";
+                    } else {
+                        statusEl.textContent = "Failed to load ROM";
+                    }
+                };
+                xhr.onerror = function() { statusEl.textContent = "Network error loading ROM"; };
+                xhr.send();
+            } else {
+                statusEl.textContent = "Failed to load BIOS";
+            }
+        };
+        xhrBios.onerror = function() { statusEl.textContent = "Network error loading BIOS"; };
+        xhrBios.send();
+
+        // Key dispatch to iframe
+        var keyMap = {
+            "ArrowUp":    { key: "ArrowUp",    keyCode: 38 },
+            "ArrowDown":  { key: "ArrowDown",  keyCode: 40 },
+            "ArrowLeft":  { key: "ArrowLeft",  keyCode: 37 },
+            "ArrowRight": { key: "ArrowRight", keyCode: 39 },
+            "KeyA":       { key: "a",          keyCode: 65 },
+            "KeyS":       { key: "s",          keyCode: 83 },
+            "KeyD":       { key: "d",          keyCode: 68 },
+            "KeyW":       { key: "w",          keyCode: 87 },
+            "Digit1":     { key: "1",          keyCode: 49 },
+            "Enter":      { key: "Enter",      keyCode: 13 }
+        };
+        function sendKey(type, code) {
+            try {
+                var m = keyMap[code] || { key: code, keyCode: 0 };
+                var gf = document.getElementById("game-frame");
+                var target = gf.contentDocument.body;
+                target.dispatchEvent(new KeyboardEvent(type, {
+                    code: code, key: m.key, keyCode: m.keyCode, which: m.keyCode,
+                    bubbles: true, cancelable: true
+                }));
+            } catch(e) {}
+        }
+
+        // Joystick
+        var jsBall = document.getElementById("joystick-ball");
+        var jsBase = document.getElementById("joystick-base");
+        var jsActive = false;
+        var jsKeys = { up: false, down: false, left: false, right: false };
+        var jsMaxDist = 32;
+        var jsDeadZone = 10;
+
+        function jsGetCenter() {
+            var r = jsBase.getBoundingClientRect();
+            return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        }
+
+        function jsUpdateDir(dx, dy) {
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            var newKeys = { up: false, down: false, left: false, right: false };
+            if (dist > jsDeadZone) {
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    if (dx > 0) newKeys.right = true; else newKeys.left = true;
+                } else {
+                    if (dy > 0) newKeys.down = true; else newKeys.up = true;
+                }
+            }
+            if (newKeys.up !== jsKeys.up) sendKey(newKeys.up ? "keydown" : "keyup", "ArrowUp");
+            if (newKeys.down !== jsKeys.down) sendKey(newKeys.down ? "keydown" : "keyup", "ArrowDown");
+            if (newKeys.left !== jsKeys.left) sendKey(newKeys.left ? "keydown" : "keyup", "ArrowLeft");
+            if (newKeys.right !== jsKeys.right) sendKey(newKeys.right ? "keydown" : "keyup", "ArrowRight");
+            jsKeys = newKeys;
+        }
+
+        function jsMove(clientX, clientY) {
+            var c = jsGetCenter();
+            var dx = clientX - c.x, dy = clientY - c.y;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > jsMaxDist) { dx = dx / dist * jsMaxDist; dy = dy / dist * jsMaxDist; }
+            jsBall.style.transform = "translate(calc(-50% + " + dx + "px), calc(-50% + " + dy + "px))";
+            jsUpdateDir(dx, dy);
+        }
+
+        function jsReset() {
+            jsActive = false;
+            jsBall.style.transform = "translate(-50%, -50%)";
+            jsUpdateDir(0, 0);
+        }
+
+        jsBase.addEventListener("touchstart", function(e) { e.preventDefault(); jsActive = true; jsMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+        jsBase.addEventListener("mousedown", function(e) { e.preventDefault(); jsActive = true; jsMove(e.clientX, e.clientY); }, { passive: false });
+        document.addEventListener("touchmove", function(e) { if (jsActive) { e.preventDefault(); jsMove(e.touches[0].clientX, e.touches[0].clientY); } }, { passive: false });
+        document.addEventListener("mousemove", function(e) { if (jsActive) jsMove(e.clientX, e.clientY); });
+        document.addEventListener("touchend", function() { if (jsActive) jsReset(); });
+        document.addEventListener("touchcancel", function() { if (jsActive) jsReset(); });
+        document.addEventListener("mouseup", function() { if (jsActive) jsReset(); });
+
+        // Action buttons
+        document.querySelectorAll("[data-key]").forEach(function(btn) {
+            var key = btn.dataset.key;
+            ["touchstart", "mousedown"].forEach(function(evt) {
+                btn.addEventListener(evt, function(e) {
+                    e.preventDefault();
+                    btn.classList.add("active");
+                    sendKey("keydown", key);
+                }, { passive: false });
+            });
+            ["touchend", "mouseup", "touchcancel", "mouseleave"].forEach(function(evt) {
+                btn.addEventListener(evt, function() {
+                    btn.classList.remove("active");
+                    sendKey("keyup", key);
+                });
+            });
+        });
+
+        document.addEventListener("dblclick", function(e) { e.preventDefault(); });
+    </script>
+</body>
+</html>
