@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "metal-slug-x",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8090", "--directory", "C:/Users/nanuz/metal-slug-x"],
+      "port": 8090
+    }
+  ]
+}
