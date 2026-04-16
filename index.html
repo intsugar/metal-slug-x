@@ -41,7 +41,7 @@
             flex-direction: column; position: relative;
         }
 
-        /* Marquee / header strip — Neo Geo MVS style */
+        /* Marquee / header strip */
         #marquee {
             height: 34px; flex-shrink: 0;
             background: linear-gradient(180deg, #2a1a0a 0%, #1a1008 100%);
@@ -51,18 +51,9 @@
             font-size: 11px; font-weight: bold; color: #aa8844;
             letter-spacing: 3px; text-transform: uppercase;
         }
-        #marquee .neo-logo {
-            color: #ffaa00; letter-spacing: 2px;
-            text-shadow: 0 0 8px rgba(255,170,0,0.4);
-        }
-        #marquee .sep {
-            color: #ff4400; margin: 0 2px;
-            text-shadow: 0 0 6px rgba(255,68,0,0.4);
-        }
-        #marquee .game-title {
-            color: #ff6633; letter-spacing: 2px;
-            text-shadow: 0 0 8px rgba(255,100,50,0.4);
-        }
+        #marquee .neo-logo { color: #ffaa00; letter-spacing: 2px; text-shadow: 0 0 8px rgba(255,170,0,0.4); }
+        #marquee .sep { color: #ff4400; margin: 0 2px; text-shadow: 0 0 6px rgba(255,68,0,0.4); }
+        #marquee .game-title { color: #ff6633; letter-spacing: 2px; text-shadow: 0 0 8px rgba(255,100,50,0.4); }
 
         /* Screen bezel area */
         #screen-bezel {
@@ -72,19 +63,11 @@
             border-right: 6px solid #1a1208;
             box-shadow: inset 0 0 30px rgba(0,0,0,0.8), inset 0 0 4px rgba(200,100,50,0.05);
         }
-        /* CRT scanline overlay — 50% intensity */
         #screen-bezel::after {
             content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 2px,
-                rgba(0,0,0,0.04) 2px,
-                rgba(0,0,0,0.04) 4px
-            );
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
             pointer-events: none; z-index: 2;
         }
-        /* Screen glow — 50% intensity */
         #screen-bezel::before {
             content: ''; position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
             border: 1px solid rgba(200,120,50,0.075);
@@ -92,18 +75,18 @@
             pointer-events: none; z-index: 1;
         }
 
-        #game-frame {
-            width: 100%; height: 100%; border: none;
+        /* Canvas replaces iframe — no more iframe issues on mobile */
+        #canvas {
+            width: 100% !important; height: 100% !important;
             display: block; position: relative; z-index: 0;
         }
 
-        /* === CONTROL PANEL — dark military/industrial Neo Geo look === */
+        /* === CONTROL PANEL === */
         #control-panel {
             height: 35%; min-height: 180px; flex-shrink: 0; position: relative;
             background: linear-gradient(180deg, #1c1810 0%, #141008 40%, #0e0c06 100%);
             border-top: 3px solid #3a2a18;
         }
-        /* Panel surface texture */
         #control-panel::before {
             content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background:
@@ -111,14 +94,12 @@
                 radial-gradient(ellipse at 70% 60%, rgba(100,60,20,0.04) 0%, transparent 50%);
             pointer-events: none;
         }
-        /* Metal edge strip */
         #control-panel::after {
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
             background: linear-gradient(90deg, #443320, #886640, #443320);
             opacity: 0.4;
         }
 
-        /* Player label */
         #player-label {
             position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -126,7 +107,6 @@
             letter-spacing: 4px; text-transform: uppercase;
         }
 
-        /* COIN/START row — centered below player label */
         #coin-start-row {
             position: absolute; top: 24px; left: 50%; transform: translateX(-50%);
             display: flex; gap: 10px;
@@ -150,7 +130,6 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,80,50,0.1);
         }
 
-        /* Joystick */
         #joystick-zone {
             position: absolute; left: 20px; bottom: 16px;
             width: 150px; height: 150px;
@@ -174,16 +153,12 @@
             width: 54px; height: 54px; border-radius: 50%;
             background: radial-gradient(circle at 38% 35%, #444, #222, #111);
             border: 2px solid #3a3020;
-            box-shadow:
-                0 6px 16px rgba(0,0,0,0.7),
-                inset 0 -3px 6px rgba(0,0,0,0.5),
-                inset 0 3px 6px rgba(255,255,255,0.08);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.7), inset 0 -3px 6px rgba(0,0,0,0.5), inset 0 3px 6px rgba(255,255,255,0.08);
             transition: transform 0.05s ease-out;
             cursor: grab;
         }
         #joystick-ball:active { cursor: grabbing; }
 
-        /* Action buttons — 4 Neo Geo buttons: A B C D */
         #buttons-area {
             position: absolute; right: 12px; bottom: 16px;
             display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
@@ -198,10 +173,7 @@
             cursor: pointer; transition: all 0.08s;
             text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
-        .action-btn:active, .action-btn.active {
-            transform: scale(0.92); filter: brightness(1.3);
-        }
-        /* Neo Geo colors: A=red, B=yellow, C=green, D=blue */
+        .action-btn:active, .action-btn.active { transform: scale(0.92); filter: brightness(1.3); }
         #btn-a {
             background: radial-gradient(circle at 40% 35%, #cc2222, #991111, #660a0a);
             border: 3px solid #dd3333;
@@ -223,7 +195,6 @@
             box-shadow: 0 4px 10px rgba(20,50,180,0.5), inset 0 2px 4px rgba(255,255,255,0.12), inset 0 -2px 4px rgba(0,0,0,0.3);
         }
 
-        /* Decorative screws */
         .screw {
             position: absolute; width: 10px; height: 10px; border-radius: 50%;
             background: radial-gradient(circle at 40% 35%, #555, #333, #222);
@@ -240,7 +211,6 @@
         #screw-bl { bottom: 6px; left: 6px; }
         #screw-br { bottom: 6px; right: 6px; }
 
-        /* Bottom edge */
         #cab-bottom {
             height: 6px; flex-shrink: 0;
             background: linear-gradient(180deg, #0a0804, #050402);
@@ -263,10 +233,8 @@
             <span class="game-title">METAL SLUG X</span>
         </div>
         <div id="screen-bezel">
-            <iframe id="game-frame"></iframe>
-            <div id="debug-bar" style="position:absolute;bottom:0;left:0;right:0;z-index:99;
-                background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:11px;
-                padding:4px 8px;pointer-events:none;"></div>
+            <!-- Canvas directly in page — no iframe, no mobile iframe issues -->
+            <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
         </div>
         <div id="control-panel">
             <div id="player-label">PLAYER 1</div>
@@ -294,18 +262,39 @@
     </div>
 
     <script>
+        // === GLOBAL STATE ===
         var ROMDATA = null;
         var BIOSDATA = null;
         var ROMNAME = "mslugx.zip";
         var BIOSNAME = "neogeo.zip";
         var RETROCFG = "";
         var statusEl = document.getElementById("load-status");
+        var emuStarted = false;
+        var emuAttempted = false;
 
+        // === FUNCTIONS EXPECTED BY EMU_CORE3.JS / WASM ===
+        // emu_core3.js reads parent.ROMDATA etc. — since there's no iframe,
+        // parent === window, so it reads our global variables directly.
+        function checkControls() { onEmulatorReady(); }
+        function isMobileDevice() { return false; }
+        function getSoundStatus() { return true; }
+        function enableControls() {}
+        function mobileControlsVisible() { return false; }
+        function goBackButtonResetIncrement() {}
+        function onEmulatorReady() {}
+
+        function onEmulatorStarted() {
+            if (emuStarted) return;
+            emuStarted = true;
+            console.warn("[MAIN] Game started!");
+            document.getElementById("loading").style.display = "none";
+        }
+
+        // === RETROARCH CONFIG ===
         function buildConfig() {
             var w = window.innerWidth, h = window.innerHeight, e = "scroll_lock", c = "";
             c += "rgui_browser_directory = /\n";
             c += "input_player1_start = enter\ninput_player1_select = num1\n";
-            // Neo Geo: A=a, B=s, C=d, D=w (mapped to retroarch a,b,r,x)
             c += "input_player1_a = a\ninput_player1_b = s\ninput_player1_r = d\n";
             c += "input_player1_x = w\ninput_player1_y = q\ninput_player1_l = e\n";
             c += "input_audio_mute = f9\ninput_reset = f10\n";
@@ -339,63 +328,67 @@
             return c;
         }
 
-        function onEmulatorReady() {}
-        var emuStarted = false;
-        function debugMsg(msg) {
-            var d = document.getElementById("debug-bar");
-            if (d) d.textContent = msg;
-            console.warn("[DEBUG] " + msg);
-        }
-        function onEmulatorStarted() {
-            if (emuStarted) return;
-            emuStarted = true;
-            document.getElementById("loading").style.display = "none";
-            var d = document.getElementById("debug-bar");
-            if (d) d.style.display = "none";
-        }
-
-        // Poll iframe state and report via debug bar
-        var diagInterval = setInterval(function() {
-            if (emuStarted) { clearInterval(diagInterval); return; }
+        // === EMULATOR CONTROL (was in emu.html, now direct) ===
+        function cancelMainLoop() {
             try {
-                var w = document.getElementById("game-frame").contentWindow;
-                var info = [];
-                if (w.Module) {
-                    info.push("Module:OK");
-                    if (w.Module.calledRun) info.push("calledRun:YES");
-                    else info.push("calledRun:NO");
-                    if (typeof w.Module.callMain === "function") info.push("callMain:OK");
-                    else info.push("callMain:NO");
-                } else { info.push("Module:NO"); }
-                if (typeof w.Browser !== "undefined" && w.Browser.mainLoop) {
-                    info.push("frames:" + w.Browser.mainLoop.currentFrameNumber);
-                }
-                if (typeof w.Emulator_started !== "undefined") info.push("started:" + w.Emulator_started);
-                if (typeof w.Emulator_running !== "undefined") info.push("running:" + w.Emulator_running);
-                if (w.stage) info.push("stage:" + w.stage);
-                if (w.emuAttempted) info.push("attempted:YES");
-                debugMsg(info.join(" | "));
-            } catch(e) { debugMsg("iframe access error: " + e); }
-        }, 2000);
+                Browser.mainLoop.currentlyRunningMainloop++;
+                Browser.mainLoop.func = null;
+                console.warn("[MAIN] cancelled main loop, id=" + Browser.mainLoop.currentlyRunningMainloop);
+            } catch(e) { console.warn("[MAIN] cancelMainLoop: " + e); }
+        }
 
-        // Fallback at 30s — hide loading, force-start
-        setTimeout(function() {
-            if (!emuStarted) {
-                document.getElementById("loading").style.display = "none";
-                try {
-                    var w = document.getElementById("game-frame").contentWindow;
-                    if (w.Emulator_running !== undefined) w.Emulator_running = true;
-                    if (w.startEmulator && !w.emuAttempted) w.startEmulator();
-                } catch(e) {}
+        function startEmulator() {
+            if (emuStarted) return;
+            emuAttempted = true;
+            console.warn("[MAIN] startEmulator: callMain with /" + ROMNAME);
+            statusEl.textContent = "Starting game...";
+
+            var canvas = document.getElementById("canvas");
+            var bezel = document.getElementById("screen-bezel");
+            var cw = bezel.offsetWidth || window.innerWidth;
+            var ch = bezel.offsetHeight || (window.innerHeight * 0.6);
+
+            cancelMainLoop();
+            Emulator_started = false;
+            Emulator_running = true;
+
+            try {
+                Module.callMain(["/" + ROMNAME]);
+                console.warn("[MAIN] callMain OK");
+                statusEl.textContent = "Waiting for frames...";
+            } catch(e) {
+                console.warn("[MAIN] callMain error: " + e);
+                statusEl.textContent = "callMain error: " + e;
             }
-        }, 30000);
 
-        function getSoundStatus() { return true; }
-        function enableControls() {}
-        function mobileControlsVisible() { return false; }
-        function goBackButtonResetIncrement() {}
+            canvas.width = cw;
+            canvas.height = ch;
+            setTimeout(resizeCanvas, 500);
+            setTimeout(resizeCanvas, 1500);
+            setTimeout(resizeCanvas, 3000);
+        }
 
-        // Fetch BIOS first, then ROM
+        function resizeCanvas() {
+            try {
+                var bezel = document.getElementById("screen-bezel");
+                var cw = bezel.offsetWidth || window.innerWidth;
+                var ch = bezel.offsetHeight || (window.innerHeight * 0.6);
+                Module.setCanvasSize(cw, ch, true);
+            } catch(e) {}
+        }
+        window.addEventListener("resize", resizeCanvas);
+
+        // Keep Emulator_running true and detect when game starts
+        setInterval(function() {
+            try {
+                if (typeof Emulator_running !== "undefined") Emulator_running = true;
+                if (typeof Emulator_started !== "undefined" && Emulator_started === true) {
+                    onEmulatorStarted();
+                }
+            } catch(e) {}
+        }, 500);
+
+        // === ROM/BIOS FETCH & STARTUP ===
         statusEl.textContent = "Loading BIOS...";
         var xhrBios = new XMLHttpRequest();
         xhrBios.open("GET", "roms/" + BIOSNAME, true);
@@ -417,14 +410,48 @@
                     if (xhr.status === 200) {
                         ROMDATA = xhr.response;
                         RETROCFG = buildConfig();
-                        statusEl.textContent = "Starting emulator...";
-                        // Show cabinet behind loading overlay so iframe is visible
-                        // Firefox requires visible iframes for rAF to fire
+                        statusEl.textContent = "Loading emulator core...";
+
+                        // Show cabinet so canvas is visible for rendering
                         document.getElementById("cabinet").style.display = "flex";
-                        var gf = document.getElementById("game-frame");
-                        gf.style.width = (window.innerWidth || 800) + "px";
-                        gf.style.height = (window.innerHeight * 0.6 || 400) + "px";
-                        gf.src = "emu.html?v=" + Date.now();
+
+                        // Load emu_core3.js directly — no iframe!
+                        var script = document.createElement("script");
+                        script.src = "emu_core3.js?v=" + Date.now();
+                        script.onload = function() {
+                            console.warn("[MAIN] emu_core3.js loaded, waiting for WASM compile...");
+                            statusEl.textContent = "Compiling WASM...";
+
+                            var startTime = Date.now();
+                            var checker = setInterval(function() {
+                                var elapsed = Math.round((Date.now() - startTime) / 1000);
+                                try {
+                                    if (Module && Module.calledRun === true) {
+                                        clearInterval(checker);
+                                        console.warn("[MAIN] WASM ready in " + elapsed + "s, starting in 2s");
+                                        statusEl.textContent = "WASM ready, starting game...";
+                                        setTimeout(startEmulator, 2000);
+                                        return;
+                                    }
+                                } catch(e) {}
+                                if (elapsed % 5 === 0 && elapsed > 0) {
+                                    statusEl.textContent = "Compiling WASM... " + elapsed + "s";
+                                }
+                                if (elapsed > 30 && !emuAttempted) {
+                                    clearInterval(checker);
+                                    console.warn("[MAIN] WASM timeout, force starting");
+                                    statusEl.textContent = "WASM timeout, starting...";
+                                    try {
+                                        if (Module && typeof Module.callMain === "function") startEmulator();
+                                        else statusEl.textContent = "Module.callMain not available";
+                                    } catch(e) { statusEl.textContent = "Fallback error: " + e; }
+                                }
+                            }, 500);
+                        };
+                        script.onerror = function() {
+                            statusEl.textContent = "Failed to load emulator core";
+                        };
+                        document.body.appendChild(script);
                     } else {
                         statusEl.textContent = "Failed to load ROM";
                     }
@@ -438,7 +465,36 @@
         xhrBios.onerror = function() { statusEl.textContent = "Network error loading BIOS"; };
         xhrBios.send();
 
-        // Key dispatch to iframe
+        // Error recovery — retry callMain on errors
+        var errorRetryCount = 0;
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.warn("[MAIN] error: " + msg);
+            errorRetryCount++;
+            if (errorRetryCount > 3) return true;
+            setTimeout(function() {
+                try {
+                    console.warn("[MAIN] retry #" + errorRetryCount);
+                    cancelMainLoop();
+                    Emulator_started = false;
+                    Emulator_running = true;
+                    Module.callMain(["/" + ROMNAME]);
+                } catch(e) { console.warn("[MAIN] retry error: " + e); }
+            }, 3000);
+            return true;
+        };
+
+        // Fallback: force-start after 30s
+        setTimeout(function() {
+            if (!emuStarted) {
+                document.getElementById("loading").style.display = "none";
+                try {
+                    if (typeof Emulator_running !== "undefined") Emulator_running = true;
+                    if (!emuAttempted && typeof startEmulator === "function") startEmulator();
+                } catch(e) {}
+            }
+        }, 30000);
+
+        // === CONTROLS — dispatch keys directly to document (no iframe!) ===
         var keyMap = {
             "ArrowUp":    { key: "ArrowUp",    keyCode: 38 },
             "ArrowDown":  { key: "ArrowDown",  keyCode: 40 },
@@ -452,15 +508,12 @@
             "Enter":      { key: "Enter",      keyCode: 13 }
         };
         function sendKey(type, code) {
-            try {
-                var m = keyMap[code] || { key: code, keyCode: 0 };
-                var gf = document.getElementById("game-frame");
-                var target = gf.contentDocument.body;
-                target.dispatchEvent(new KeyboardEvent(type, {
-                    code: code, key: m.key, keyCode: m.keyCode, which: m.keyCode,
-                    bubbles: true, cancelable: true
-                }));
-            } catch(e) {}
+            var m = keyMap[code] || { key: code, keyCode: 0 };
+            // Dispatch directly on document — emscripten listens here
+            document.dispatchEvent(new KeyboardEvent(type, {
+                code: code, key: m.key, keyCode: m.keyCode, which: m.keyCode,
+                bubbles: true, cancelable: true
+            }));
         }
 
         // Joystick
